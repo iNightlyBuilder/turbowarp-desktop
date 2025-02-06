@@ -1,0 +1,44 @@
+name: Windows
+
+on:
+    workflow_dispatch:
+    schedule:
+      - cron: "0 21 * * *"
+
+jobs:
+  Build:
+    runs-on: windows-latest
+    steps:
+      - name: setup-node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: setup-git
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      - uses: actions/checkout@v4
+
+      - name: clone-repo
+        run: |
+          git clone --recursive https://github.com/TurboWarp/desktop %USERPROFILE%\turbowarp-desktop
+          cd %USERPROFILE%\turbowarp-desktop
+          git submodule init
+          git submodule update
+
+      - name: npm-ci
+        run: |
+          cd %USERPROFILE%\turbowarp-desktop
+          npm ci
+          npm run fetch
+
+      - name: build
+        run: |
+          cd %USERPROFILE%\turbowarp-desktop
+          npm run webpack:prod
+          npx electron-builder --windows nsis --x64
+
+    permissions:
+      contents: write
+
